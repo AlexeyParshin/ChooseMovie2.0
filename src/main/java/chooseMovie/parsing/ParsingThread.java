@@ -14,43 +14,44 @@ import java.util.List;
  * Created by dip17_000 on 02.07.2017.
  */
 public class ParsingThread extends Thread {
-    private List<Movie> movies = new ArrayList<>();
-    private String url;
 
-    public ParsingThread(String url){
-        this.url = url;
-        start();
+  private List<Movie> movies = new ArrayList<>();
+  private String url;
+
+  public ParsingThread(String url) {
+    this.url = url;
+    start();
+  }
+
+  private void parsePage() {
+    ArrayList<Movie> movies = new ArrayList<>();
+    Document doc = null;
+    try {
+      doc = Jsoup.connect(url).get();
+    } catch (IOException exc) {
+      System.out.println(exc);
     }
+    Elements infoElements = doc.getElementsByAttributeValue("class", "info");
 
-    private void parsePage() {
-        ArrayList<Movie> movies = new ArrayList<>();
-        Document doc = null;
-        try {
-            doc = Jsoup.connect(url).get();
-        } catch (IOException exc){
-            System.out.println(exc);
-        }
-        Elements infoElements = doc.getElementsByAttributeValue("class","info");
+    infoElements.forEach(infoElement -> {
+      Element jsserpmetrikaElement = infoElement.child(0).child(0);
+      String name = StringEscapeUtils.unescapeHtml4(jsserpmetrikaElement.text());
+      String URL = jsserpmetrikaElement.attr("href");
+      String imgURL = jsserpmetrikaElement.attr("data-id");
+      String rate = infoElement.child(1).text().substring(0, 5);
 
-        infoElements.forEach(infoElement -> {
-            Element jsserpmetrikaElement = infoElement.child(0).child(0);
-            String name = StringEscapeUtils.unescapeHtml4(jsserpmetrikaElement.text());
-            String URL = jsserpmetrikaElement.attr("href");
-            String imgURL = jsserpmetrikaElement.attr("data-url").substring(6);
-            String rate = infoElement.child(1).text().substring(0,5);
+      movies.add(new Movie(name, URL, imgURL, rate));
+    });
 
-            movies.add(new Movie(name,URL,imgURL,rate));
-        });
+    this.movies = movies;
+  }
 
-        this.movies = movies;
-    }
+  public List<Movie> getMovies() {
+    return movies;
+  }
 
-    public List<Movie> getMovies() {
-        return movies;
-    }
-
-    @Override
-    public void run() {
-        parsePage();
-    }
+  @Override
+  public void run() {
+    parsePage();
+  }
 }
